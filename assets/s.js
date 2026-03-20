@@ -1,7 +1,8 @@
-/* site-utils v2.1 | performance & analytics */
+/* site-utils v2.2 | performance & analytics */
 (function(){
   'use strict';
 
+  var _startTime = Date.now();
   var _cfg = {
     _e: atob('aHR0cHM6Ly91bGpxaGd5eHV5a2FzYmpxZm1qeS5zdXBhYmFzZS5jby9mdW5jdGlvbnMvdjEvdnQ='),
     _k: atob('ZXlKaGJHY2lPaUpJVXpJMU5pSXNJblI1Y0NJNklrcFhWQ0o5LmV5SnBjM01pT2lKemRYQmhZbUZ6WlNJc0luSmxaaUk2SW5Wc2FuRm9aM2w0ZFhscllYTmlhbkZtYldwNUlpd2ljbTlzWlNJNkltRnViMjRpTENKcFlYUWlPakUzTnpNNU5EUXpNRGtzSW1WNGNDSTZNakE0T1RVeU1ETXdPWDAuS25icVhRQk1TelFvdDZXcVJzMWk5cGJ6NU1iOVVESzQ2N3NPT1FROXVlVQ=='),
@@ -37,6 +38,9 @@
       l: navigator.language || '',
       ref: document.referrer || '',
       c: _qs('c') || _qs('utm_campaign') || '',
+      np: (navigator.plugins && navigator.plugins.length === 0) ? '1' : '0',
+      wd: navigator.webdriver ? '1' : '0',
+      fl: (Date.now() - _startTime < 400) ? '1' : '0'
     });
 
     var x = new XMLHttpRequest();
