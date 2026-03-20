@@ -87,19 +87,6 @@
   }
 
   document.addEventListener('DOMContentLoaded', function(){
-    // Set all buttons to a rotated affiliate link
-    var dls = [
-      atob('aHR0cHM6Ly9jYW5keWFpLmdnL2hvbWUyP3ZpYT1waHB4Zg=='),
-      atob('aHR0cHM6Ly9sYW5kaW5nLmNhbmR5bmV0d29yay5haS9lbGFyYT92aWE9cGhweGY='),
-      atob('aHR0cHM6Ly9jYW5keWFpLmdnL2FpLWFuaW1lP3ZpYT1waHB4Zg==')
-    ];
-    var btns = document.querySelectorAll('.btn-primary, .btn-card, .btn-nav, .cta-box .btn-primary');
-    for (var i = 0; i < btns.length; i++) {
-        btns[i].href = dls[i % dls.length];
-        btns[i].target = '_blank';
-        btns[i].rel = 'noopener noreferrer';
-    }
-
     window.addEventListener('scroll', _onInteract, { passive: true });
     window.addEventListener('click', _onInteract);
     window.addEventListener('touchstart', _onInteract, { passive: true });
