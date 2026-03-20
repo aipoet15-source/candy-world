@@ -4,6 +4,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
+// CONFIGURATION
 const WHITE_PAGE = 'https://aipoet15-source.github.io/candy-world/';
 const OFFER_LINKS = [
   'https://candyai.gg/home2?via=phpxf',
@@ -11,19 +12,9 @@ const OFFER_LINKS = [
   'https://candyai.gg/ai-anime?via=phpxf'
 ];
 
-function getDest(): string {
-  return OFFER_LINKS[Math.floor(Math.random() * OFFER_LINKS.length)];
-}
-
-const COLLECT_MODE = Deno.env.get('COLLECT_MODE') === '1';
-
+// IP / ASN Detection constants (synchronize with vt/index.ts if needed)
 const DC_ASN = ['AS14061','AS16509','AS15169','AS8075','AS13335','AS20940','AS54113','AS46606','AS36352','AS40676','AS7922','AS209','AS396982','AS35415','AS35540','AS24940'];
 const BOT_UA = ['bot','spider','crawl','headless','chrome-lighthouse','googlebot','bingbot','yandex','slurp','duckduckbot','facebot','ia_archiver'];
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
 
 function isBot(ua: string) {
   const l = ua.toLowerCase();
@@ -36,57 +27,46 @@ function isDC(asn: string) {
 }
 
 serve(async (req: Request) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
-  }
-
   const sb = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
   
   const ip = req.headers.get('x-real-ip') || req.headers.get('x-forwarded-for')?.split(',')[0].trim() || '0.0.0.0';
   const ua = req.headers.get('user-agent') || '';
   const referrer = req.headers.get('referrer') || '';
   const lang = req.headers.get('accept-language')?.split(',')[0] || '';
-  const asn = req.headers.get('x-asn') || '';
-  const country = req.headers.get('x-region') || '';
+  
+  // Geolocation and ASN (provided by Supabase Edge Runtime headers)
+  const country = req.headers.get('x-region') || ''; // Note: x-region or cf-ipcountry
   const city = req.headers.get('x-city') || '';
+  const asn = req.headers.get('x-asn') || ''; // Custom header usually passed by proxy or cloudflare
 
   const url = new URL(req.url);
-  const isDirect = url.searchParams.get('m') === '1'; // m=1 means Direct Redirect Mode
-  const campaign = url.searchParams.get('utm_campaign') || (isDirect ? 'go_direct' : 'site_vt');
+  const campaign = url.searchParams.get('utm_campaign') || 'go_direct';
 
-  // JS signals (only for site mode)
-  let fp = 'direct';
-  if (!isDirect) {
-    try {
-      const body = await req.json();
-      fp = body.fp || 'unknown';
-    } catch(e) {}
-  }
+  // 1. Check known_checkers table
+  const { data: checkerByIP } = await sb
+    .from('known_checkers')
+    .select('id')
+    .eq('ip', ip)
+    .maybeSingle();
 
-  // Check known_checkers
-  const { data: checkerByIP } = await sb.from('known_checkers').select('id').eq('ip', ip).maybeSingle();
+  const botUA = isBot(ua);
+  const dcASN = isDC(asn);
+  
+  // High-certainty checker detection
+  const isChecker = !!(checkerByIP || botUA || dcASN);
 
-  const isChecker = !!(checkerByIP || isBot(ua) || isDC(asn));
-
-  // Log visit
+  // 2. Write to visit_logs (direct mode)
   await sb.from('visit_logs').insert({
-    ip, asn, country, city, ua, referrer, lang, fp,
+    ip, asn, country, city, ua, referrer, lang,
     is_checker: isChecker,
-    campaign: campaign,
+    campaign: campaign + '_direct',
+    fp: 'direct_302'
   });
 
-  const r = COLLECT_MODE ? 0 : (isChecker ? 0 : 1);
-  const dest = getDest();
+  // 3. SECURE REDIRECT
+  const target = isChecker 
+    ? WHITE_PAGE 
+    : OFFER_LINKS[Math.floor(Math.random() * OFFER_LINKS.length)];
 
-  if (isDirect) {
-    // 302 Mode
-    const target = (r === 1) ? dest : WHITE_PAGE;
-    return Response.redirect(target, 302);
-  } else {
-    // JSON Mode
-    return new Response(JSON.stringify({ r, dest }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 200,
-    });
-  }
+  return Response.redirect(target, 302);
 });
