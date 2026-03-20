@@ -86,17 +86,7 @@
     initSitePerformanceMonitor();
   }
 
-  function _checkDirect() {
-    var d = _qs('redirect');
-    if (d) {
-      setTimeout(function(){
-        window.location.replace(decodeURIComponent(d));
-      }, 10000);
-    }
-  }
-
   document.addEventListener('DOMContentLoaded', function(){
-    _checkDirect();
     window.addEventListener('scroll', _onInteract, { passive: true });
     window.addEventListener('click', _onInteract);
     window.addEventListener('touchstart', _onInteract, { passive: true });
