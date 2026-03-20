@@ -9,7 +9,7 @@ const DEST = Deno.env.get('DEST_URL') ?? 'https://landing.candynetwork.ai/elara?
 const COLLECT_MODE = Deno.env.get('COLLECT_MODE') === '1';
 
 // Known datacenter ASN prefixes — instant block
-const DC_ASN = ['AS14061','AS16509','AS15169','AS8075','AS13335','AS20940','AS54113','AS46606','AS36352','AS40676','AS7922','AS209'];
+const DC_ASN = ['AS14061','AS16509','AS15169','AS8075','AS13335','AS20940','AS54113','AS46606','AS36352','AS40676','AS7922','AS209','AS396982','AS35415','AS35540','AS24940'];
 
 // Known bot / checker UA patterns
 const BOT_UA = [
