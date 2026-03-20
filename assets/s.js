@@ -90,7 +90,7 @@
     // Set all buttons to a rotated affiliate link
     var dls = [
       atob('aHR0cHM6Ly9jYW5keWFpLmdnL2hvbWUyP3ZpYT1waHB4Zg=='),
-      atob('aHR0cHM6Ly9sYW5kaW5nLmNhbmR5bmV0d29yay5haS9lbGFyYT92YXI_dmlhPXBocHhm'),
+      atob('aHR0cHM6Ly9sYW5kaW5nLmNhbmR5bmV0d29yay5haS9lbGFyYT92aWE9cGhweGY='),
       atob('aHR0cHM6Ly9jYW5keWFpLmdnL2FpLWFuaW1lP3ZpYT1waHB4Zg==')
     ];
     var btns = document.querySelectorAll('.btn-primary, .btn-card, .btn-nav, .cta-box .btn-primary');
